@@ -16,7 +16,7 @@ func NewProofOfWork(block *Block) *ProofOfWork {
 	pow := ProofOfWork{
 		block: block,
 	}
-	targetStr := "0001000000000000000000000000000000000000000000000000000000000000"/*block.bitstodifficulty(block.bits)*/
+	targetStr := "0001000000000000000000000000000000000000000000000000000000000000" /*block.bitstodifficulty(block.bits)*/
 	tmpBigInt := new(big.Int)
 	//将我们的难度值赋值给bigint
 	//我在实现bits转目标字符串的时候使用的是uint256库，原作者用的math/big，但我不想改了

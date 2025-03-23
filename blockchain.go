@@ -9,7 +9,6 @@ import (
 	// "github.com/holiman/uint256"
 	// "math/big"
 	// "math"
-	
 )
 
 //	type BlockNode struct{
@@ -63,7 +62,7 @@ func CreateBlockChain(address string) error {
 
 func GetBlockChainInstance() (*BlockChain, error) {
 	//通用的鲁棒控制，函数必吃榜
-	if !isFileExist(blockchainDBFile)  {
+	if !isFileExist(blockchainDBFile) {
 		return nil, errors.New("区块链文件不存在，请先创建")
 	}
 
@@ -226,8 +225,6 @@ func (bc *BlockChain) findNeedUTXO(pubKeyHash []byte, amount float64) (map[strin
 	return retMap, retValue
 }
 
-
-
 func (bc *BlockChain) signTransaction(tx *Transaction, priKey *ecdsa.PrivateKey) bool {
 	fmt.Println("Transaction-signing initializing") //其实很多fmt输出只是为了cli的交互性(((
 	prevTxs := make(map[string]*Transaction)
@@ -284,7 +281,6 @@ func (bc *BlockChain) findTransaction(txid []byte) *Transaction {
 	}
 	return nil
 }
-
 
 // func (bc *BlockChain) bitstodifficulty(bits uint64) (targetStr string) {
 // 	const lent int = 64

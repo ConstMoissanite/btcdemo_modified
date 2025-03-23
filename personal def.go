@@ -1,6 +1,5 @@
 package main
 
-
 /*
 这里是我觉得好一些的原始定义
 type Block_Content struct {

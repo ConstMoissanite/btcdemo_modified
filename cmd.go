@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"encoding/json"
 )
 
 func (cli *CLI) addBlock(data string) {
