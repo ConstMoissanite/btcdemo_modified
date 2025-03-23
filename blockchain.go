@@ -281,7 +281,7 @@ func (bc *BlockChain) findTransaction(txid []byte) *Transaction {
 	return nil
 }
 
-func (bc *BlockChain) Bitstodifficulty(bits uint64) (targetStr string) {
+func (bc *BlockChain) BitstoDifficulty(bits uint64) (targetStr string) {
 	const lent int = 64
 
 	var mid uint64 = bits & 0xFFFFFFFF
@@ -290,6 +290,33 @@ func (bc *BlockChain) Bitstodifficulty(bits uint64) (targetStr string) {
 	potential = 8 * (potential - 3)
 	var oristr = strconv.FormatUint(base1, 16) + strings.Repeat("0", int(potential))
 	str_noprefix := strings.TrimPrefix(oristr, "0x")
-	targetStr = fmt.Sprintf("0x%s", strings.Repeat("0", lent-len(str_noprefix))+str_noprefix)
+	targetStr = strings.Repeat("0", lent-len(str_noprefix))+str_noprefix
+	return
+}
+
+func (bc *BlockChain) DifficultytoBits(diff string)(Bits uint64){
+	var count=0
+	var tgt=diff
+	for {
+        if strings.HasSuffix(tgt, "00") {
+            tgt = tgt[:len(tgt)-2]
+            count++
+        } else {
+            break
+        }
+    }
+	for {
+        if strings.HasPrefix(tgt, "00") {
+            tgt = tgt[2:]
+        } else {
+            break
+        }
+    }
+	var potential uint64=uint64(count+3)<<24
+	var base,err =strconv.ParseUint(tgt,16,64)
+	if err!=nil{
+		return 0
+	}
+	Bits=(potential+base)&0xFFFFFFFF
 	return
 }
