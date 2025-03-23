@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
-	// "github.com/holiman/uint256"
-	// "math/big"
-	// "math"
+	"strconv"
+	"strings"
 )
 
 //	type BlockNode struct{
@@ -282,17 +281,15 @@ func (bc *BlockChain) findTransaction(txid []byte) *Transaction {
 	return nil
 }
 
-// func (bc *BlockChain) bitstodifficulty(bits uint64) (targetStr string) {
-// 	const lent int = 64
+func (bc *BlockChain) Bitstodifficulty(bits uint64) (targetStr string) {
+	const lent int = 64
 
-// 	var mid uint64 = bits & 0xFFFFFFFF
-// 	var potential uint64 = (mid >> 24) & 0xFF
-// 	var base1 uint64 = mid & 0x00FFFFFF
-//  potential=8*(potential-3)
-// 	var ResultInInt Int = (base1 <<potential)
-// 	var hexstr_ori string = strings.TrimPrefix((&ResultInInt.Hex()), "0x")
-
-// 	targetStr = fmt.Sprintf("0x%s", strings.Repeat("0", lent-len(hexstr_ori))+hexstr_ori)
-
-// 	return
-// }
+	var mid uint64 = bits & 0xFFFFFFFF
+	var potential uint64 = (mid >> 24) & 0xFF
+	var base1 uint64 = mid & 0x00FFFFFF
+	potential = 8 * (potential - 3)
+	var oristr = strconv.FormatUint(base1, 16) + strings.Repeat("0", int(potential))
+	str_noprefix := strings.TrimPrefix(oristr, "0x")
+	targetStr = fmt.Sprintf("0x%s", strings.Repeat("0", lent-len(str_noprefix))+str_noprefix)
+	return
+}
