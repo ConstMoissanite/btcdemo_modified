@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"crypto/elliptic"//是我以前没见过也没想过的曲线加密库
+	"crypto/elliptic" //是我以前没见过也没想过的曲线加密库
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
@@ -14,33 +14,29 @@ import (
 )
 
 // - 结构定义
-type wallet struct 
-{
+type wallet struct {
 	PriKey *ecdsa.PrivateKey
 	PubKey []byte
-}//原注释讲了公钥，也有关于script的一点细节
+} //原注释讲了公钥，也有关于script的一点细节
 
-func newWalletKeyPair() *wallet 
-{
-	curve := elliptic.P256()//椭圆加密，这里用256已经足够
-	priKey, err := ecdsa.GenerateKey(curve, rand.Reader)//随机初始私钥
-	if err != nil 
-	{
+func newWalletKeyPair() *wallet {
+	curve := elliptic.P256()                             //椭圆加密，这里用256已经足够
+	priKey, err := ecdsa.GenerateKey(curve, rand.Reader) //随机初始私钥
+	if err != nil {
 		fmt.Println("ecdsa.GenerateKey err:", err)
 		return nil
 	}
 
 	pubKeyRaw := priKey.PublicKey
 
-	pubKey := append(pubKeyRaw.X.Bytes(), pubKeyRaw.Y.Bytes()...)//拼接
+	pubKey := append(pubKeyRaw.X.Bytes(), pubKeyRaw.Y.Bytes()...) //拼接
 
-	wallet := wallet{priKey, pubKey}//映射
+	wallet := wallet{priKey, pubKey} //映射
 	return &wallet
 }
 
-func (w *wallet) getAddress() string 
-{
-	
+func (w *wallet) getAddress() string {
+
 	pubKeyHash := getPubKeyHashFromPubKey(w.PubKey)
 
 	payload := append([]byte{byte(0x00)}, pubKeyHash...)
@@ -69,7 +65,7 @@ func getPubKeyHashFromAddress(address string) []byte {
 		return nil
 	}
 
-	pubKeyHash := decodeInfo[1 : len(decodeInfo)-4]//这里是把最后checksum给去掉
+	pubKeyHash := decodeInfo[1 : len(decodeInfo)-4] //这里是把最后checksum给去掉
 	return pubKeyHash
 }
 
@@ -88,8 +84,8 @@ func isValidAddress(address string) bool {
 		return false
 	}
 
-	payload := decodeInfo[:len(decodeInfo)-4]   
+	payload := decodeInfo[:len(decodeInfo)-4]
 	checksum1 := decodeInfo[len(decodeInfo)-4:] //分离
 	checksum2 := checkSum(payload)
 	return bytes.Equal(checksum1, checksum2)
-}//这就已经算是script了
+} //这就已经算是script了

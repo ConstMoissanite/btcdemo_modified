@@ -9,11 +9,9 @@ import (
 	"sort"
 )
 
-
 type WalletManager struct {
-
 	Wallets map[string]*wallet
-}//类比为python的dict
+} //类比为python的dict
 
 func NewWalletManager() *WalletManager {
 	var wm WalletManager
@@ -36,7 +34,7 @@ func (wm *WalletManager) createWallet() string {
 
 	address := w.getAddress()
 
-	wm.Wallets[address] = w 
+	wm.Wallets[address] = w
 
 	if !wm.saveFile() {
 		return ""
@@ -51,7 +49,7 @@ const walletFile = "wallet.dat"
 func (wm *WalletManager) saveFile() bool {
 	var buffer bytes.Buffer
 
-	gob.Register(elliptic.P256())//太好了是复合，我们没救了
+	gob.Register(elliptic.P256()) //太好了是复合，我们没救了
 
 	encoder := gob.NewEncoder(&buffer)
 	err := encoder.Encode(wm)

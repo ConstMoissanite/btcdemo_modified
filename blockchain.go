@@ -1,62 +1,59 @@
 package main
+
 import (
 	"bytes"
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"github.com/boltdb/bolt"
-	"uint256"
-	"math"
+	// "github.com/holiman/uint256"
+	// "math/big"
+	// "math"
+	
 )
-//type BlockNode struct{
-//	block Block
-//}使用deserializer可以直接实现为类链表,此处依照原教程使用bolt.db用数组模拟
+
+//	type BlockNode struct{
+//		block Block
+//	}使用deserializer可以直接实现为类链表,此处依照原教程使用bolt.db用数组模拟
 type BlockChain struct {
-	db   *bolt.DB 
+	db   *bolt.DB
 	tail []byte
 }
 
 const genesisInfo = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 const blockchainDBFile = "blockchain.db"
-const bucketBlock = "bucketBlock"           
-const lastBlockHashKey = "lastBlockHashKey" 
+const bucketBlock = "bucketBlock"
+const lastBlockHashKey = "lastBlockHashKey"
+
 //教程中这一段集成了部分常用文本数据如创世语，桶和访问字段
 
-func CreateBlockChain(address string) error 
-{
-//鲁棒
-	if isFileExist(blockchainDBFile) 
-	{
+func CreateBlockChain(address string) error {
+	//鲁棒
+	if isFileExist(blockchainDBFile) {
 		fmt.Println("区块链文件已经开始存在！")
 		return nil
 	}
 
 	db, err := bolt.Open(blockchainDBFile, 0600, nil)
-	if err != nil 
-	{
+	if err != nil {
 		return err
 	}
 
 	//延迟
 	defer db.Close()
 
-	err = db.Update(func(tx *bolt.Tx) error 
-	{
+	err = db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketBlock))
-		if bucket == nil 
-		{
+		if bucket == nil {
 			bucket, err := tx.CreateBucket([]byte(bucketBlock))
-			if err != nil 
-			{
+			if err != nil {
 				return err
 			}
 
 			coinbase := NewCoinbaseTx(address, genesisInfo)
 			txs := []*Transaction{coinbase}
 			genesisBlock := NewBlock(txs, nil)
-			bucket.Put(genesisBlock.Hash, genesisBlock.Serialize()) 
+			bucket.Put(genesisBlock.Hash, genesisBlock.Serialize())
 			bucket.Put([]byte(lastBlockHashKey), genesisBlock.Hash)
 		}
 		return nil
@@ -64,28 +61,24 @@ func CreateBlockChain(address string) error
 	return err
 }
 
-func GetBlockChainInstance() (*BlockChain, error) 
-{
+func GetBlockChainInstance() (*BlockChain, error) {
 	//通用的鲁棒控制，函数必吃榜
-	if isFileExist(blockchainDBFile) == false 
-	{
+	if isFileExist(blockchainDBFile) == false {
 		return nil, errors.New("区块链文件不存在，请先创建")
 	}
 
-	var lastHash []byte 
+	var lastHash []byte
 
 	db, err := bolt.Open(blockchainDBFile, 0600, nil) //rwx  0110 => 6
-	if err != nil 
-	{
+	if err != nil {
 		return nil, err
 	}
 
-	db.View(func(tx *bolt.Tx) error 
-	{
+	db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketBlock))
 
 		if bucket == nil {
-			return errors.New("bucket不应为nil")//鲁棒+1
+			return errors.New("bucket不应为nil") //鲁棒+1
 		} else {
 			lastHash = bucket.Get([]byte(lastBlockHashKey))
 		}
@@ -96,28 +89,23 @@ func GetBlockChainInstance() (*BlockChain, error)
 	return &bc, nil
 }
 
-func (bc *BlockChain) AddBlock(txs1 []*Transaction) error 
-{
+func (bc *BlockChain) AddBlock(txs1 []*Transaction) error {
 	txs := []*Transaction{}
-	fmt.Println("校验中")//你知道我要说什么
-	for _, tx := range txs1 
-	{
-		if bc.verifyTransaction(tx) 
-		{
+	fmt.Println("校验中") //你知道我要说什么
+	for _, tx := range txs1 {
+		if bc.verifyTransaction(tx) {
 			fmt.Printf("当前交易校验成功:%x\n", tx.TXID)
 			txs = append(txs, tx)
-		} else 
-		{
+		} else {
 			fmt.Printf("当前交易校验失败:%x\n", tx.TXID)
 		}
 	}
 
-	lastBlockHash := bc.tail 
+	lastBlockHash := bc.tail
 
 	newBlock := NewBlock(txs, lastBlockHash)
 
-	err := bc.db.Update(func(tx *bolt.Tx) error 
-	{
+	err := bc.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketBlock))
 		if bucket == nil {
 			return errors.New("Error:nil bucket in block adding")
@@ -134,17 +122,14 @@ func (bc *BlockChain) AddBlock(txs1 []*Transaction) error
 	return err
 }
 
-type Iterator struct 
-{
+type Iterator struct {
 	db          *bolt.DB
 	currentHash []byte //指针平替(bushi)
 }
 
-//bind
-func (bc *BlockChain) NewIterator() *Iterator 
-{
-	it := Iterator
-	{
+// bind
+func (bc *BlockChain) NewIterator() *Iterator {
+	it := Iterator{
 		db:          bc.db,
 		currentHash: bc.tail,
 	}
@@ -152,80 +137,65 @@ func (bc *BlockChain) NewIterator() *Iterator
 	return &it
 }
 
-func (it *Iterator) Next() (block *Block) 
-{
+func (it *Iterator) Next() (block *Block) {
 
-	err := it.db.View(func(tx *bolt.Tx) error 
-	{
+	err := it.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketBlock))
-		if bucket == nil 
-		{
+		if bucket == nil {
 			return errors.New("Error: nil bucket in iteration process")
 		}
 
-		blockTmpInfo  := bucket.Get(it.currentHash) h
+		blockTmpInfo := bucket.Get(it.currentHash)
 		block = Deserialize(blockTmpInfo)
-		it.currentHash = block.PrevHash 
+		it.currentHash = block.PrevHash
 
 		return nil
 	})
-	if err != nil 
-	{
+	if err != nil {
 		fmt.Printf("iterator next err:", err)
 		return nil
 	}
 	return
 }
 
-type UTXOInfo struct 
-{
-	Txid []byte
-	Index int64
-	TXOutput//Annoymous Announcement
+type UTXOInfo struct {
+	Txid     []byte
+	Index    int64
+	TXOutput //Annoymous Announcement
 }
 
-
-func (bc *BlockChain) FindMyUTXO(pubKeyHash []byte) (utxoInfos []UTXOInfo) 
-{
+func (bc *BlockChain) FindMyUTXO(pubKeyHash []byte) (utxoInfos []UTXOInfo) {
 	spentUtxos := make(map[string][]int)
 	it := bc.NewIterator()
 	for {
 		block := it.Next()
-		for _, tx := range block.Transactions 
-		{
+		for _, tx := range block.Txs {
 		LABEL:
-			for outputIndex, output := range tx.TXOutputs 
-			{
+			for outputIndex, output := range tx.TXOutputs {
 				fmt.Println("outputIndex:", outputIndex)
-				if bytes.Equal(output.ScriptPubKeyHash, pubKeyHash) 
-				{
+				if bytes.Equal(output.ScriptPubKeyHash, pubKeyHash) {
 					currentTxid := string(tx.TXID)
 					indexArray := spentUtxos[currentTxid]
 					if len(indexArray) != 0 {
-						for _, spendIndex  := range indexArray 
-						{
-							if outputIndex  == spendIndex 
-							{
+						for _, spendIndex := range indexArray {
+							if outputIndex == spendIndex {
 								continue LABEL
 							}
 						}
 					}
 					utxoinfo := UTXOInfo{tx.TXID, int64(outputIndex), output}
-					utxoInfos = append(utxoInfos, utxoinfo)//加入主表
+					utxoInfos = append(utxoInfos, utxoinfo) //加入主表
 				}
 
 			}
-			if tx.isCoinbaseTx() //我超，矿
-			{
+			if tx.isCoinbaseTx() /*我超，矿*/ {
 				fmt.Println("Coinbase")
 				continue
 			}
 
-			for _, input := range tx.TXInputs 
-			{
+			for _, input := range tx.TXInputs {
 				//pub签名导致的
-				if bytes.Equal(getPubKeyHashFromPubKey(input.PubKey), pubKeyHash) 
-				{
+				if bytes.Equal(getPubKeyHashFromPubKey(input.PubKey), pubKeyHash) {
 					spentKey := string(input.Txid)
 					spentUtxos[spentKey] = append(spentUtxos[spentKey], int(input.Index))
 				}
@@ -239,18 +209,15 @@ func (bc *BlockChain) FindMyUTXO(pubKeyHash []byte) (utxoInfos []UTXOInfo)
 	return
 }
 
-func (bc *BlockChain) findNeedUTXO(pubKeyHash []byte, amount float64) (map[string][]int64, float64) 
-{
+func (bc *BlockChain) findNeedUTXO(pubKeyHash []byte, amount float64) (map[string][]int64, float64) {
 	var retMap = make(map[string][]int64)
 	var retValue float64
 	utxoInfos := bc.FindMyUTXO(pubKeyHash)
-	for _, utxoinfo := range utxoInfos 
-	{
+	for _, utxoinfo := range utxoInfos {
 		retValue += utxoinfo.Value
 		key := string(utxoinfo.Txid)
 		retMap[key] = append(retMap[key], utxoinfo.Index)
-		if retValue >= amount 
-		{
+		if retValue >= amount {
 			break
 		}
 	}
@@ -259,26 +226,14 @@ func (bc *BlockChain) findNeedUTXO(pubKeyHash []byte, amount float64) (map[strin
 	每一次交易后更新，这样就可以通过参数对交易传入所需的UTXO*/
 	return retMap, retValue
 }
-//合并UTXO列表，最后只需要记录1个UTXO就能达成类似于账户模型的效果
-func (bc *BlockChain) UTXOfix(pubKeyHashList [][]byte) (AllUTXO []UTXOInfo)
-{
-	for _, pubKeyHash:=range pubKeyHashList
-	{
-		utxos=bc.FindMyUTXO(pubKeyHash)
-		for _,utxo :=range utxos
-		{
-			utxo=append(AllUTXO,utxo)
-		}
-	}
-	return
-}
 
-func (bc *BlockChain) signTransaction(tx *Transaction, priKey *ecdsa.PrivateKey) bool 
-{
-	fmt.Println("Transaction-signing initializing")//其实很多fmt输出只是为了cli的交互性(((
+
+
+func (bc *BlockChain) signTransaction(tx *Transaction, priKey *ecdsa.PrivateKey) bool {
+	fmt.Println("Transaction-signing initializing") //其实很多fmt输出只是为了cli的交互性(((
 	prevTxs := make(map[string]*Transaction)
 	for _, input := range tx.TXInputs {
-		prevTx  := bc.findTransaction(input.Txid)
+		prevTx := bc.findTransaction(input.Txid)
 		if prevTx == nil {
 			fmt.Println("没有找到有效引用的交易")
 			return false
@@ -289,18 +244,15 @@ func (bc *BlockChain) signTransaction(tx *Transaction, priKey *ecdsa.PrivateKey)
 	}
 	return tx.sign(priKey, prevTxs)
 }
-func (bc *BlockChain) verifyTransaction(tx *Transaction) bool 
-{
+func (bc *BlockChain) verifyTransaction(tx *Transaction) bool {
 	fmt.Println("verifying Transaction")
 
-	if tx.isCoinbaseTx() 
-	{
+	if tx.isCoinbaseTx() {
 		fmt.Println("Skip:Coinbase")
 		return true
 	}
 	prevTxs := make(map[string]*Transaction)
-	for _, input := range tx.TXInputs 
-	{
+	for _, input := range tx.TXInputs {
 		prevTx := bc.findTransaction(input.Txid)
 		if prevTx == nil {
 			fmt.Println("没有找到有效引用的交易")
@@ -313,45 +265,39 @@ func (bc *BlockChain) verifyTransaction(tx *Transaction) bool
 
 	return tx.verify(prevTxs)
 }
-//这一系列的方法其思路没多大差别
-func (bc *BlockChain) findTransaction(txid []byte) *Transaction 
-{
+
+// 这一系列的方法其思路没多大差别
+func (bc *BlockChain) findTransaction(txid []byte) *Transaction {
 	it := bc.NewIterator()
 
-	for 
-	{
+	for {
 		block := it.Next()
 
-		for _, tx := range block.Transactions 
-		{
-			if bytes.Equal(tx.TXID, txid) 
-			{
+		for _, tx := range block.Txs {
+			if bytes.Equal(tx.TXID, txid) {
 				return tx
 			}
 		}
 
-		if len(block.PrevHash) == 0 
-		{
+		if len(block.PrevHash) == 0 {
 			break
 		}
 	}
 	return nil
 }
-func (bc *BlockChain)bitstodifficulty(bits uint64)(targetStr string)
-{
-	const lent int=64
-	
-	mid :=bits&0xFFFFFFFF
-	potential uint64=(mid>>24)&0xFF
-	base1 uint64=mid&0x00FFFFFF
-	
-	ResultInInt Int=base1*(math.Pow(2,(8*(potential-3))))
-	hexstr_ori :=strings.TrimPrefix((&ResultInInt.Hex()),"0x")
-	
-	if len(hexstr_ori)<lent
-	{
-		targetStr=fmt.Sprintf("0x%s", strings.Repeat("0", lent - len(hexstr_ori)) + hexstr_ori)
-	}
-	
-	return
-}
+
+
+// func (bc *BlockChain) bitstodifficulty(bits uint64) (targetStr string) {
+// 	const lent int = 64
+
+// 	var mid uint64 = bits & 0xFFFFFFFF
+// 	var potential uint64 = (mid >> 24) & 0xFF
+// 	var base1 uint64 = mid & 0x00FFFFFF
+
+// 	var ResultInInt Int = base1 * (math.Pow(2, float64(8 * (potential - 3))))
+// 	var hexstr_ori string = strings.TrimPrefix((&ResultInInt.Hex()), "0x")
+
+// 	targetStr = fmt.Sprintf("0x%s", strings.Repeat("0", lent-len(hexstr_ori))+hexstr_ori)
+
+// 	return
+// }
