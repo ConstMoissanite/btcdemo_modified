@@ -9,8 +9,6 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcutil/base58"
-
-	"golang.org/x/crypto/ripemd160"
 )
 
 // - 结构定义
@@ -50,7 +48,7 @@ func (w *wallet) getAddress() string {
 
 func getPubKeyHashFromPubKey(pubKey []byte) []byte {
 	hash1 := sha256.Sum256(pubKey)
-	hasher := ripemd160.New()
+	hasher := sha256.New()
 	hasher.Write(hash1[:])
 
 	pubKeyHash := hasher.Sum(nil)

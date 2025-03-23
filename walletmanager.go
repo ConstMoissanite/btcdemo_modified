@@ -5,7 +5,7 @@ import (
 	"crypto/elliptic"
 	"encoding/gob"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 )
 
@@ -59,9 +59,9 @@ func (wm *WalletManager) saveFile() bool {
 		return false
 	}
 
-	err = ioutil.WriteFile(walletFile, buffer.Bytes(), 0600)
+	err = os.WriteFile(walletFile, buffer.Bytes(), 0600)
 	if err != nil {
-		fmt.Println("ioutil.WriteFile err:", err)
+		fmt.Println("os.WriteFile err:", err)
 		return false
 	}
 	return true
@@ -73,9 +73,9 @@ func (wm *WalletManager) loadFile() bool {
 		return true
 	}
 
-	content, err := ioutil.ReadFile(walletFile)
+	content, err := os.ReadFile(walletFile)
 	if err != nil {
-		fmt.Println("ioutil.ReadFile err:", err)
+		fmt.Println("os.ReadFile err:", err)
 		return false
 	}
 

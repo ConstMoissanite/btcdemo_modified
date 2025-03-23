@@ -63,7 +63,7 @@ func CreateBlockChain(address string) error {
 
 func GetBlockChainInstance() (*BlockChain, error) {
 	//通用的鲁棒控制，函数必吃榜
-	if isFileExist(blockchainDBFile) == false {
+	if !isFileExist(blockchainDBFile)  {
 		return nil, errors.New("区块链文件不存在，请先创建")
 	}
 
@@ -108,7 +108,7 @@ func (bc *BlockChain) AddBlock(txs1 []*Transaction) error {
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketBlock))
 		if bucket == nil {
-			return errors.New("Error:nil bucket in block adding")
+			return errors.New("error:nil bucket in block adding")
 		}
 
 		bucket.Put(newBlock.Hash, newBlock.Serialize())
@@ -142,7 +142,7 @@ func (it *Iterator) Next() (block *Block) {
 	err := it.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketBlock))
 		if bucket == nil {
-			return errors.New("Error: nil bucket in iteration process")
+			return errors.New("error: nil bucket in iteration process")
 		}
 
 		blockTmpInfo := bucket.Get(it.currentHash)
@@ -152,7 +152,7 @@ func (it *Iterator) Next() (block *Block) {
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("iterator next err:", err)
+		fmt.Println("iterator next err:", err)
 		return nil
 	}
 	return
@@ -174,8 +174,7 @@ func (bc *BlockChain) FindMyUTXO(pubKeyHash []byte) (utxoInfos []UTXOInfo) {
 			for outputIndex, output := range tx.TXOutputs {
 				fmt.Println("outputIndex:", outputIndex)
 				if bytes.Equal(output.ScriptPubKeyHash, pubKeyHash) {
-					currentTxid := string(tx.TXID)
-					indexArray := spentUtxos[currentTxid]
+					indexArray := spentUtxos[string(tx.TXID)]
 					if len(indexArray) != 0 {
 						for _, spendIndex := range indexArray {
 							if outputIndex == spendIndex {
@@ -293,8 +292,8 @@ func (bc *BlockChain) findTransaction(txid []byte) *Transaction {
 // 	var mid uint64 = bits & 0xFFFFFFFF
 // 	var potential uint64 = (mid >> 24) & 0xFF
 // 	var base1 uint64 = mid & 0x00FFFFFF
-
-// 	var ResultInInt Int = base1 * (math.Pow(2, float64(8 * (potential - 3))))
+//  potential=8*(potential-3)
+// 	var ResultInInt Int = (base1 <<potential)
 // 	var hexstr_ori string = strings.TrimPrefix((&ResultInInt.Hex()), "0x")
 
 // 	targetStr = fmt.Sprintf("0x%s", strings.Repeat("0", lent-len(hexstr_ori))+hexstr_ori)
